@@ -15,7 +15,7 @@ def mutate_campaigns():
     "client_secret": "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",
     "refresh_token": "1//05RQiitm33T7ZCgYIARAAGAUSNgF-L9IrVb74M5mbUJa0d3d1rtbhKyUdjXZ0frGa1kaiF73985TwCFy9ZA6jGneJ2pb7z9axWQ",
     "use_proto_plus": True,
-    "login_customer_id": "2457509276"
+    "login_customer_id": "2098090633"
 }
         
         client = GoogleAdsClient.load_from_dict(credentials)
