@@ -10,12 +10,13 @@ def mutate_campaigns():
         operations_data = request_json['operations_json']
         
         credentials = {
-            "developer_token": "FFuv07GUVTShEgiFhIJuXA",
-            "client_id": "64876736744-29o1ok0886up9glujb7ou1kiv8r34l7i.apps.googleusercontent.com",
-            "client_secret": "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",
-            "refresh_token": "1//05RQiitm33T7ZCgYIARAAGAUSNgF-L9IrVb74M5mbUJa0d3d1rtbhKyUdjXZ0frGa1kaiF73985TwCFy9ZA6jGneJ2pb7z9axWQ",
-            "use_proto_plus": True
-        }
+    "developer_token": "FFuv07GUVTShEgiFhIJuXA",
+    "client_id": "64876736744-29o1ok0886up9glujb7ou1kiv8r34l7i.apps.googleusercontent.com",
+    "client_secret": "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",
+    "refresh_token": "1//05RQiitm33T7ZCgYIARAAGAUSNgF-L9IrVb74M5mbUJa0d3d1rtbhKyUdjXZ0frGa1kaiF73985TwCFy9ZA6jGneJ2pb7z9axWQ",
+    "use_proto_plus": True,
+    "login_customer_id": "2457509276"
+}
         
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
