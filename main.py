@@ -47,7 +47,6 @@ def mutate_campaigns():
         response = googleads_service.mutate(
             customer_id=customer_id,
             mutate_operations=mutate_operations,
-            partial_failure=True,
             validate_only=validate_only
         )
         
