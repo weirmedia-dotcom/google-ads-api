@@ -84,3 +84,11 @@ def test_access():
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/', methods=['POST'])
+def mutate_campaigns():
+    try:
+        request_json = request.get_json()
+        print(f"FULL REQUEST: {request_json}")
+        
+        mutate_operations = request_json['mutate_operations']
