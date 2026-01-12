@@ -10,7 +10,6 @@ def mutate_campaigns():
     try:
         request_json = request.get_json()
         mutate_operations_list = request_json['mutate_operations']
-        validate_only = request_json.get('validate_only', False)
         
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
@@ -46,15 +45,13 @@ def mutate_campaigns():
         
         response = googleads_service.mutate(
             customer_id=customer_id,
-            mutate_operations=mutate_operations,
-            validate_only=validate_only
+            mutate_operations=mutate_operations
         )
         
         return jsonify({
             "success": True,
             "customer_id": customer_id,
             "operations_count": len(mutate_operations),
-            "validate_only": validate_only,
             "results": str(response)
         })
         
