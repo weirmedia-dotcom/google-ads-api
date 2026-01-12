@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from google.ads.googleads.client import GoogleAdsClient
 from google.protobuf import json_format
+import re
 
 app = Flask(__name__)
 
@@ -9,13 +10,6 @@ def mutate_campaigns():
     try:
         request_json = request.get_json()
         mutate_operations_list = request_json['mutate_operations']
-        
-        # Check if Make.com double-wrapped it
-        if len(mutate_operations_list) > 0 and isinstance(mutate_operations_list[0], dict):
-            if 'mutate_operations' in mutate_operations_list[0]:
-                # It's double-wrapped, unwrap it
-                mutate_operations_list = mutate_operations_list[0]['mutate_operations']
-        
         validate_only = request_json.get('validate_only', False)
         
         credentials = {
@@ -30,25 +24,17 @@ def mutate_campaigns():
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
         
-        # Now extract customer_id from first operation
+        # Extract customer_id by searching for ANY resource_name in the JSON
         customer_id = None
-        first_op = mutate_operations_list[0]
-        for op_type, op_data in first_op.items():
-            if 'create' in op_data and 'resource_name' in op_data['create']:
-                resource_name = op_data['create']['resource_name']
-                parts = resource_name.split('/')
-                if len(parts) >= 2 and parts[0] == 'customers':
-                    customer_id = parts[1]
-                    break
+        json_str = str(mutate_operations_list)
+        match = re.search(r"customers/(\d+)/", json_str)
+        if match:
+            customer_id = match.group(1)
         
         if not customer_id:
             return jsonify({
                 "success": False, 
-                "error": "Could not extract customer_id",
-                "debug": {
-                    "first_op_keys": list(first_op.keys()),
-                    "first_op_structure": str(first_op)[:500]
-                }
+                "error": "Could not extract customer_id from operations"
             }), 400
         
         # Convert dict operations to protobuf MutateOperation objects
