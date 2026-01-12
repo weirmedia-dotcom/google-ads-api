@@ -7,6 +7,9 @@ app = Flask(__name__)
 def mutate_campaigns():
     try:
         request_json = request.get_json()
+        print(f"REQUEST KEYS: {list(request_json.keys())}")
+        print(f"TYPE OF mutate_operations: {type(request_json.get('mutate_operations'))}")
+        
         mutate_operations = request_json['mutate_operations']
         
         # Make.com is double-wrapping - unwrap if needed
@@ -40,7 +43,6 @@ def mutate_campaigns():
         
         print(f"Extracted customer_id: {customer_id}")
         print(f"Calling Google Ads API...")
-        print(f"First operation: {mutate_operations[0]}")
         
         response = googleads_service.mutate(
             customer_id=customer_id,
@@ -84,11 +86,3 @@ def test_access():
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route('/', methods=['POST'])
-def mutate_campaigns():
-    try:
-        request_json = request.get_json()
-        print(f"FULL REQUEST: {request_json}")
-        
-        mutate_operations = request_json['mutate_operations']
