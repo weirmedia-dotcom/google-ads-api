@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from google.ads.googleads.client import GoogleAdsClient
+import sys
 
 app = Flask(__name__)
 
@@ -7,14 +8,21 @@ app = Flask(__name__)
 def mutate_campaigns():
     debug_info = {}
     try:
+        # Force flush to stdout
+        print("=" * 50, flush=True)
+        print("REQUEST RECEIVED", flush=True)
+        print("=" * 50, flush=True)
+        
         request_json = request.get_json()
         
-        # Debug info - return it in response if there's an error
+        # Debug info
         debug_info = {
             "keys": list(request_json.keys()),
             "type": str(type(request_json.get('mutate_operations'))),
             "first_key_value_type": str(type(list(request_json.values())[0])) if request_json else None
         }
+        
+        print(f"DEBUG INFO: {debug_info}", flush=True)
         
         mutate_operations = request_json['mutate_operations']
         
@@ -45,10 +53,14 @@ def mutate_campaigns():
             if customer_id:
                 break
         
+        print(f"Calling API with customer_id: {customer_id}", flush=True)
+        
         response = googleads_service.mutate(
             customer_id=customer_id,
             mutate_operations=mutate_operations
         )
+        
+        print("API SUCCESS", flush=True)
         
         return jsonify({
             "success": True,
@@ -58,6 +70,7 @@ def mutate_campaigns():
         })
         
     except Exception as e:
+        print(f"ERROR: {str(e)}", flush=True)
         return jsonify({
             "success": False, 
             "error": str(e),
