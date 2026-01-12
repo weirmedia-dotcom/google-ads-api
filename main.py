@@ -14,7 +14,7 @@ def mutate_campaigns():
         
         request_json = request.get_json()
         mutate_operations_list = request_json['mutate_operations']
-        validate_only = request_json.get('validate_only', False)  # Optional parameter
+        validate_only = request_json.get('validate_only', False)
         
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
@@ -28,14 +28,18 @@ def mutate_campaigns():
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
         
-        # Extract customer_id from first operation
+        # Extract customer_id - format is: customers/2457509276/resource/-1
         customer_id = None
         for op_dict in mutate_operations_list:
             for op_type, op_data in op_dict.items():
-                if 'create' in op_data and 'resource_name' in op_data['create']:
-                    resource_name = op_data['create']['resource_name']
-                    customer_id = resource_name.split('/')[1]
-                    break
+                if 'create' in op_data:
+                    create_data = op_data['create']
+                    if 'resource_name' in create_data:
+                        resource_name = create_data['resource_name']
+                        parts = resource_name.split('/')
+                        if len(parts) >= 2 and parts[0] == 'customers':
+                            customer_id = parts[1]
+                            break
             if customer_id:
                 break
         
@@ -59,7 +63,7 @@ def mutate_campaigns():
             customer_id=customer_id,
             mutate_operations=mutate_operations,
             partial_failure=True,
-            validate_only=validate_only  # DRY RUN when True
+            validate_only=validate_only
         )
         
         print("SUCCESS!", flush=True)
