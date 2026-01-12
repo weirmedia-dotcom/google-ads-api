@@ -23,7 +23,7 @@ def mutate_campaigns():
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
         
-        # Extract customer_id
+        # Extract customer_id by searching for ANY resource_name in the JSON
         customer_id = None
         json_str = str(mutate_operations_list)
         match = re.search(r"customers/(\d+)/", json_str)
@@ -36,22 +36,21 @@ def mutate_campaigns():
                 "error": "Could not extract customer_id from operations"
             }), 400
         
-        # Convert dict operations to protobuf
+        # Convert dict operations to protobuf MutateOperation objects
         mutate_operations = []
         for op_dict in mutate_operations_list:
             operation = client.get_type("MutateOperation")
             json_format.ParseDict(op_dict, operation._pb)
             mutate_operations.append(operation)
         
-        # Get the enum type
-        response_content_type_enum = client.enums.ResponseContentTypeEnum
+        print(f"Calling Google Ads API with {len(mutate_operations)} operations...", flush=True)
         
-        # Call API with response content type
         response = googleads_service.mutate(
             customer_id=customer_id,
-            mutate_operations=mutate_operations,
-            response_content_type=response_content_type_enum.MUTABLE_RESOURCE
+            mutate_operations=mutate_operations
         )
+        
+        print("SUCCESS!", flush=True)
         
         return jsonify({
             "success": True,
@@ -61,6 +60,7 @@ def mutate_campaigns():
         })
         
     except Exception as e:
+        print(f"ERROR: {str(e)}", flush=True)
         return jsonify({
             "success": False, 
             "error": str(e)
