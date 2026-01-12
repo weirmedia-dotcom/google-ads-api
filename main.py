@@ -36,6 +36,7 @@ def mutate_campaigns():
         
         print(f"Extracted customer_id: {customer_id}")
         print(f"Calling Google Ads API...")
+        print(f"First operation: {mutate_operations[0]}")
         
         response = googleads_service.mutate(
             customer_id=customer_id,
