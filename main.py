@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from google.ads.googleads.client import GoogleAdsClient
 from google.protobuf import json_format
-from google.ads.googleads.v22.enums.types.response_content_type import ResponseContentTypeEnum
 import re
 
 app = Flask(__name__)
@@ -44,11 +43,14 @@ def mutate_campaigns():
             json_format.ParseDict(op_dict, operation._pb)
             mutate_operations.append(operation)
         
-        # Call API with MUTABLE_RESOURCE response type
+        # Get the enum type
+        response_content_type_enum = client.enums.ResponseContentTypeEnum
+        
+        # Call API with response content type
         response = googleads_service.mutate(
             customer_id=customer_id,
             mutate_operations=mutate_operations,
-            response_content_type=ResponseContentTypeEnum.MUTABLE_RESOURCE
+            response_content_type=response_content_type_enum.MUTABLE_RESOURCE
         )
         
         return jsonify({
