@@ -5,18 +5,22 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def mutate_campaigns():
+    debug_info = {}
     try:
         request_json = request.get_json()
-        print(f"REQUEST KEYS: {list(request_json.keys())}")
-        print(f"TYPE OF mutate_operations: {type(request_json.get('mutate_operations'))}")
+        
+        # Debug info - return it in response if there's an error
+        debug_info = {
+            "keys": list(request_json.keys()),
+            "type": str(type(request_json.get('mutate_operations'))),
+            "first_key_value_type": str(type(list(request_json.values())[0])) if request_json else None
+        }
         
         mutate_operations = request_json['mutate_operations']
         
         # Make.com is double-wrapping - unwrap if needed
         if isinstance(mutate_operations, dict) and 'mutate_operations' in mutate_operations:
             mutate_operations = mutate_operations['mutate_operations']
-        
-        print(f"Received {len(mutate_operations)} operations")
         
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
@@ -41,15 +45,10 @@ def mutate_campaigns():
             if customer_id:
                 break
         
-        print(f"Extracted customer_id: {customer_id}")
-        print(f"Calling Google Ads API...")
-        
         response = googleads_service.mutate(
             customer_id=customer_id,
             mutate_operations=mutate_operations
         )
-        
-        print(f"Success! Response received")
         
         return jsonify({
             "success": True,
@@ -59,8 +58,11 @@ def mutate_campaigns():
         })
         
     except Exception as e:
-        print(f"Error: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({
+            "success": False, 
+            "error": str(e),
+            "debug": debug_info
+        }), 500
 
 @app.route('/test-access', methods=['GET'])
 def test_access():
