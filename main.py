@@ -1,3 +1,8 @@
+from flask import Flask, request, jsonify
+from google.ads.googleads.client import GoogleAdsClient
+
+app = Flask(__name__)
+
 @app.route('/', methods=['POST'])
 def mutate_campaigns():
     try:
@@ -48,4 +53,29 @@ def mutate_campaigns():
         
     except Exception as e:
         print(f"Error: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/test-access', methods=['GET'])
+def test_access():
+    try:
+        credentials = {
+            "developer_token": "FFuv07GUVTShEgiFhIJuXA",
+            "client_id": "64876736744-29o1ok0886up9glujb7ou1kiv8r34l7i.apps.googleusercontent.com",
+            "client_secret": "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",
+            "refresh_token": "1//05RQiitm33T7ZCgYIARAAGAUSNgF-L9IrVb74M5mbUJa0d3d1rtbhKyUdjXZ0frGa1kaiF73985TwCFy9ZA6jGneJ2pb7z9axWQ",
+            "use_proto_plus": True
+        }
+        
+        client = GoogleAdsClient.load_from_dict(credentials)
+        customer_service = client.get_service("CustomerService")
+        accessible_customers = customer_service.list_accessible_customers()
+        customer_ids = [c.split('/')[-1] for c in accessible_customers.resource_names]
+        
+        return jsonify({
+            "success": True,
+            "accessible_customer_ids": customer_ids,
+            "count": len(customer_ids)
+        })
+        
+    except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
