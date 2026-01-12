@@ -14,6 +14,7 @@ def mutate_campaigns():
         
         request_json = request.get_json()
         mutate_operations_list = request_json['mutate_operations']
+        validate_only = request_json.get('validate_only', False)  # Optional parameter
         
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
@@ -43,6 +44,7 @@ def mutate_campaigns():
         
         print(f"Customer ID: {customer_id}", flush=True)
         print(f"Operation count: {len(mutate_operations_list)}", flush=True)
+        print(f"Validate only: {validate_only}", flush=True)
         
         # Convert dict operations to protobuf MutateOperation objects
         mutate_operations = []
@@ -55,7 +57,9 @@ def mutate_campaigns():
         
         response = googleads_service.mutate(
             customer_id=customer_id,
-            mutate_operations=mutate_operations
+            mutate_operations=mutate_operations,
+            partial_failure=True,
+            validate_only=validate_only  # DRY RUN when True
         )
         
         print("SUCCESS!", flush=True)
@@ -64,6 +68,7 @@ def mutate_campaigns():
             "success": True,
             "customer_id": customer_id,
             "operations_count": len(mutate_operations),
+            "validate_only": validate_only,
             "results": str(response)
         })
         
