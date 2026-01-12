@@ -4,6 +4,8 @@ def mutate_campaigns():
         request_json = request.get_json()
         mutate_operations = request_json['mutate_operations']
         
+        print(f"Received {len(mutate_operations)} operations")
+        
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
             "client_id": "64876736744-29o1ok0886up9glujb7ou1kiv8r34l7i.apps.googleusercontent.com",
@@ -27,16 +29,23 @@ def mutate_campaigns():
             if customer_id:
                 break
         
+        print(f"Extracted customer_id: {customer_id}")
+        print(f"Calling Google Ads API...")
+        
         response = googleads_service.mutate(
             customer_id=customer_id,
             mutate_operations=mutate_operations
         )
         
+        print(f"Success! Response received")
+        
         return jsonify({
             "success": True,
             "customer_id": customer_id,
+            "operations_count": len(mutate_operations),
             "results": str(response)
         })
         
     except Exception as e:
+        print(f"Error: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
