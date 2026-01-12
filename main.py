@@ -7,7 +7,6 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def mutate_campaigns():
-    debug_info = {}
     try:
         print("=" * 50, flush=True)
         print("REQUEST RECEIVED", flush=True)
@@ -29,12 +28,18 @@ def mutate_campaigns():
         googleads_service = client.get_service("GoogleAdsService")
         
         # Extract customer_id from first operation
-        first_op = mutate_operations_list[0]
-        for op_type, op_data in first_op.items():
-            if 'create' in op_data and 'resource_name' in op_data['create']:
-                resource_name = op_data['create']['resource_name']
-                customer_id = resource_name.split('/')[1]
+        customer_id = None
+        for op_dict in mutate_operations_list:
+            for op_type, op_data in op_dict.items():
+                if 'create' in op_data and 'resource_name' in op_data['create']:
+                    resource_name = op_data['create']['resource_name']
+                    customer_id = resource_name.split('/')[1]
+                    break
+            if customer_id:
                 break
+        
+        if not customer_id:
+            return jsonify({"success": False, "error": "Could not extract customer_id from operations"}), 400
         
         print(f"Customer ID: {customer_id}", flush=True)
         print(f"Operation count: {len(mutate_operations_list)}", flush=True)
