@@ -16,6 +16,12 @@ def mutate_campaigns():
         mutate_operations_list = request_json['mutate_operations']
         validate_only = request_json.get('validate_only', False)
         
+        # DEBUG: Print first operation structure
+        print(f"First operation keys: {list(mutate_operations_list[0].keys())}", flush=True)
+        first_op_type = list(mutate_operations_list[0].keys())[0]
+        print(f"First operation type: {first_op_type}", flush=True)
+        print(f"First operation data keys: {list(mutate_operations_list[0][first_op_type].keys())}", flush=True)
+        
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
             "client_id": "64876736744-29o1ok0886up9glujb7ou1kiv8r34l7i.apps.googleusercontent.com",
