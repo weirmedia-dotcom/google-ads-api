@@ -9,6 +9,10 @@ def mutate_campaigns():
         request_json = request.get_json()
         mutate_operations = request_json['mutate_operations']
         
+        # Make.com is double-wrapping - unwrap if needed
+        if isinstance(mutate_operations, dict) and 'mutate_operations' in mutate_operations:
+            mutate_operations = mutate_operations['mutate_operations']
+        
         print(f"Received {len(mutate_operations)} operations")
         
         credentials = {
