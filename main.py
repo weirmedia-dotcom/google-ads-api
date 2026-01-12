@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from google.ads.googleads.client import GoogleAdsClient
 from google.protobuf import json_format
+from google.ads.googleads.v22.enums.types.response_content_type import ResponseContentTypeEnum
 import re
 
 app = Flask(__name__)
@@ -23,7 +24,7 @@ def mutate_campaigns():
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
         
-        # Extract customer_id by searching for ANY resource_name in the JSON
+        # Extract customer_id
         customer_id = None
         json_str = str(mutate_operations_list)
         match = re.search(r"customers/(\d+)/", json_str)
@@ -36,16 +37,18 @@ def mutate_campaigns():
                 "error": "Could not extract customer_id from operations"
             }), 400
         
-        # Convert dict operations to protobuf MutateOperation objects
+        # Convert dict operations to protobuf
         mutate_operations = []
         for op_dict in mutate_operations_list:
             operation = client.get_type("MutateOperation")
             json_format.ParseDict(op_dict, operation._pb)
             mutate_operations.append(operation)
         
+        # Call API with MUTABLE_RESOURCE response type
         response = googleads_service.mutate(
             customer_id=customer_id,
-            mutate_operations=mutate_operations
+            mutate_operations=mutate_operations,
+            response_content_type=ResponseContentTypeEnum.MUTABLE_RESOURCE
         )
         
         return jsonify({
