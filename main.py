@@ -1,26 +1,22 @@
 from flask import Flask, request, jsonify
 from google.ads.googleads.client import GoogleAdsClient
 from google.protobuf import json_format
-import sys
 
 app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def mutate_campaigns():
     try:
-        print("=" * 50, flush=True)
-        print("REQUEST RECEIVED", flush=True)
-        print("=" * 50, flush=True)
-        
         request_json = request.get_json()
         mutate_operations_list = request_json['mutate_operations']
-        validate_only = request_json.get('validate_only', False)
         
-        # DEBUG: Print first operation structure
-        print(f"First operation keys: {list(mutate_operations_list[0].keys())}", flush=True)
-        first_op_type = list(mutate_operations_list[0].keys())[0]
-        print(f"First operation type: {first_op_type}", flush=True)
-        print(f"First operation data keys: {list(mutate_operations_list[0][first_op_type].keys())}", flush=True)
+        # Check if Make.com double-wrapped it
+        if len(mutate_operations_list) > 0 and isinstance(mutate_operations_list[0], dict):
+            if 'mutate_operations' in mutate_operations_list[0]:
+                # It's double-wrapped, unwrap it
+                mutate_operations_list = mutate_operations_list[0]['mutate_operations']
+        
+        validate_only = request_json.get('validate_only', False)
         
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
@@ -34,27 +30,26 @@ def mutate_campaigns():
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
         
-        # Extract customer_id - format is: customers/2457509276/resource/-1
+        # Now extract customer_id from first operation
         customer_id = None
-        for op_dict in mutate_operations_list:
-            for op_type, op_data in op_dict.items():
-                if 'create' in op_data:
-                    create_data = op_data['create']
-                    if 'resource_name' in create_data:
-                        resource_name = create_data['resource_name']
-                        parts = resource_name.split('/')
-                        if len(parts) >= 2 and parts[0] == 'customers':
-                            customer_id = parts[1]
-                            break
-            if customer_id:
-                break
+        first_op = mutate_operations_list[0]
+        for op_type, op_data in first_op.items():
+            if 'create' in op_data and 'resource_name' in op_data['create']:
+                resource_name = op_data['create']['resource_name']
+                parts = resource_name.split('/')
+                if len(parts) >= 2 and parts[0] == 'customers':
+                    customer_id = parts[1]
+                    break
         
         if not customer_id:
-            return jsonify({"success": False, "error": "Could not extract customer_id from operations"}), 400
-        
-        print(f"Customer ID: {customer_id}", flush=True)
-        print(f"Operation count: {len(mutate_operations_list)}", flush=True)
-        print(f"Validate only: {validate_only}", flush=True)
+            return jsonify({
+                "success": False, 
+                "error": "Could not extract customer_id",
+                "debug": {
+                    "first_op_keys": list(first_op.keys()),
+                    "first_op_structure": str(first_op)[:500]
+                }
+            }), 400
         
         # Convert dict operations to protobuf MutateOperation objects
         mutate_operations = []
@@ -63,16 +58,12 @@ def mutate_campaigns():
             json_format.ParseDict(op_dict, operation._pb)
             mutate_operations.append(operation)
         
-        print("Calling Google Ads API...", flush=True)
-        
         response = googleads_service.mutate(
             customer_id=customer_id,
             mutate_operations=mutate_operations,
             partial_failure=True,
             validate_only=validate_only
         )
-        
-        print("SUCCESS!", flush=True)
         
         return jsonify({
             "success": True,
@@ -83,7 +74,6 @@ def mutate_campaigns():
         })
         
     except Exception as e:
-        print(f"ERROR: {str(e)}", flush=True)
         return jsonify({
             "success": False, 
             "error": str(e)
