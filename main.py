@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from google.ads.googleads.client import GoogleAdsClient
+from google.protobuf import json_format
 import sys
 
 app = Flask(__name__)
@@ -8,27 +9,12 @@ app = Flask(__name__)
 def mutate_campaigns():
     debug_info = {}
     try:
-        # Force flush to stdout
         print("=" * 50, flush=True)
         print("REQUEST RECEIVED", flush=True)
         print("=" * 50, flush=True)
         
         request_json = request.get_json()
-        
-        # Debug info
-        debug_info = {
-            "keys": list(request_json.keys()),
-            "type": str(type(request_json.get('mutate_operations'))),
-            "first_key_value_type": str(type(list(request_json.values())[0])) if request_json else None
-        }
-        
-        print(f"DEBUG INFO: {debug_info}", flush=True)
-        
-        mutate_operations = request_json['mutate_operations']
-        
-        # Make.com is double-wrapping - unwrap if needed
-        if isinstance(mutate_operations, dict) and 'mutate_operations' in mutate_operations:
-            mutate_operations = mutate_operations['mutate_operations']
+        mutate_operations_list = request_json['mutate_operations']
         
         credentials = {
             "developer_token": "FFuv07GUVTShEgiFhIJuXA",
@@ -42,25 +28,32 @@ def mutate_campaigns():
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
         
-        # Extract customer_id from any operation's resource_name
-        customer_id = None
-        for operation in mutate_operations:
-            for operation_type, operation_data in operation.items():
-                if 'create' in operation_data:
-                    resource_name = operation_data['create']['resource_name']
-                    customer_id = resource_name.split('/')[1].replace('-', '')
-                    break
-            if customer_id:
+        # Extract customer_id from first operation
+        first_op = mutate_operations_list[0]
+        for op_type, op_data in first_op.items():
+            if 'create' in op_data and 'resource_name' in op_data['create']:
+                resource_name = op_data['create']['resource_name']
+                customer_id = resource_name.split('/')[1]
                 break
         
-        print(f"Calling API with customer_id: {customer_id}", flush=True)
+        print(f"Customer ID: {customer_id}", flush=True)
+        print(f"Operation count: {len(mutate_operations_list)}", flush=True)
+        
+        # Convert dict operations to protobuf MutateOperation objects
+        mutate_operations = []
+        for op_dict in mutate_operations_list:
+            operation = client.get_type("MutateOperation")
+            json_format.ParseDict(op_dict, operation._pb)
+            mutate_operations.append(operation)
+        
+        print("Calling Google Ads API...", flush=True)
         
         response = googleads_service.mutate(
             customer_id=customer_id,
             mutate_operations=mutate_operations
         )
         
-        print("API SUCCESS", flush=True)
+        print("SUCCESS!", flush=True)
         
         return jsonify({
             "success": True,
@@ -73,8 +66,7 @@ def mutate_campaigns():
         print(f"ERROR: {str(e)}", flush=True)
         return jsonify({
             "success": False, 
-            "error": str(e),
-            "debug": debug_info
+            "error": str(e)
         }), 500
 
 @app.route('/test-access', methods=['GET'])
