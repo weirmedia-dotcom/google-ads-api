@@ -7,20 +7,19 @@ app = Flask(__name__)
 def mutate_campaigns():
     try:
         request_json = request.get_json()
-        operations_data = request_json['operations_json']
+        mutate_operations = request_json['mutate_operations']
         
         credentials = {
-    "developer_token": "FFuv07GUVTShEgiFhIJuXA",
-    "client_id": "64876736744-29o1ok0886up9glujb7ou1kiv8r34l7i.apps.googleusercontent.com",
-    "client_secret": "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",
-    "refresh_token": "1//05RQiitm33T7ZCgYIARAAGAUSNgF-L9IrVb74M5mbUJa0d3d1rtbhKyUdjXZ0frGa1kaiF73985TwCFy9ZA6jGneJ2pb7z9axWQ",
-    "use_proto_plus": True,
-    "login_customer_id": "2098090633"
-}
+            "developer_token": "FFuv07GUVTShEgiFhIJuXA",
+            "client_id": "64876736744-29o1ok0886up9glujb7ou1kiv8r34l7i.apps.googleusercontent.com",
+            "client_secret": "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",
+            "refresh_token": "1//05RQiitm33T7ZCgYIARAAGAUSNgF-L9IrVb74M5mbUJa0d3d1rtbhKyUdjXZ0frGa1kaiF73985TwCFy9ZA6jGneJ2pb7z9axWQ",
+            "use_proto_plus": True,
+            "login_customer_id": "2098090633"
+        }
         
         client = GoogleAdsClient.load_from_dict(credentials)
         googleads_service = client.get_service("GoogleAdsService")
-        mutate_operations = operations_data['mutate_operations']
         
         first_resource = mutate_operations[0]['campaign_budget_operation']['create']['resource_name']
         customer_id = first_resource.split('/')[1].replace('-', '')
@@ -38,9 +37,6 @@ def mutate_campaigns():
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
-# Gunicorn will handle this, no need for app.run()
-
 
 @app.route('/test-access', methods=['GET'])
 def test_access():
